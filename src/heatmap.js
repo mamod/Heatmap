@@ -163,13 +163,41 @@
             var context = canvas.getContext("2d");
             var canvas2 = h.layers[1];
             var context2 = canvas2.getContext("2d");
+            
+            var oldmax = h.maxValue;
             var count = me.setMax(x,y,num);
             
-            context.globalAlpha = count/h.maxValue;
-            var decrease = count/h.maxValue == 1 ? true : false;
-            context.drawImage(h.transIMG, x, y, h.size, h.size);
-            me.getImageData(canvas,context,context2,decrease);
-            console.log(h.maxValue);
+            var decrease = count > oldmax == 1 ? true : false;
+            console.log(count);
+            if (decrease){    
+                me.setImageData(canvas,context,context2,{
+                    redraw : true,
+                    oldMax : oldmax,
+                    onComplete : function(){
+                        //context.width = context.width;
+                        //context.globalAlpha = 1;
+                        context.drawImage(h.transIMG, x, y, h.size, h.size);
+                        me.setImageData(canvas,context,context2,{
+                            left : x,
+                            top : y,
+                            width : h.size,
+                            height : h.size
+                        });
+                    }
+                });
+                
+                console.log(h.maxValue);
+                
+            } else {
+                context.globalAlpha = count/h.maxValue;
+                context.drawImage(h.transIMG, x, y, h.size, h.size);
+                me.setImageData(canvas,context,context2,{
+                    left : x,
+                    top : y,
+                    width : h.size,
+                    height : h.size
+                });
+            }
         };
         
         this.setMax = function(x,y,count){
@@ -206,29 +234,56 @@
                     context.drawImage(h.transIMG, x, y, h.size, h.size);
                 }
             }
-            me.getImageData(canvas,context,context2);
+            
+            
+            me.setImageData(canvas,context,context2);
         };
         
-        this.getImageData = function(canvas,context,context2,decrease) {
+        this.setImageData = function(canvas,context,context2,obj) {
             
-            
+            context.globalAlpha = 1;
             var colors = h.colorWheel;
             //give some time for colorsWheel to be fully loaded
             if ( colors.length < 255 ){
                 setTimeout(function(){
-                    me.getImageData(canvas,context,context2,decrease);
+                    me.setImageData(canvas,context,context2,obj);
                 },20); return;
             }
             
-            var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            var width = canvas.width,
+            height = canvas.height,
+            left = 0, top = 0,
+            onComplete = function(){};
+            
+            var redraw = false;
+            if (obj){
+                redraw = obj.redraw;
+                left = obj.left || left;
+                top = obj.top || top;
+                width = obj.width || width;
+                height = obj.height || height;
+                onComplete = obj.onComplete || onComplete;
+            }
+            
+            var imageData = context.getImageData(left, top, width, height);
             var data = imageData.data;
             
             for(var i = 0, n = data.length; i < n; i += 4) {
                 
                 var r = i, g = i+1, b = i+2, a = i+3;
                 var alpha = data[a];
-                aa = alpha;
+                
                 if (alpha > 0){
+                    
+                    if (redraw){
+                        alpha = parseInt((alpha * obj.oldMax) / h.maxValue);
+                        if (alpha < 1){
+                            alpha = 1;
+                        } else if (alpha > 255){
+                            alpha = 255;
+                        }
+                    }
+                    
                     var color = colors[alpha];
                     data[a] = (alpha*h.opacity);
                     data[r] = color['r'];
@@ -237,11 +292,14 @@
                 }
             }
             
-            if (decrease){
-                context.putImageData(imageData, 0,0);
+            if (obj && obj.redraw){
+                context.putImageData(imageData, 0,0,left,top);
             }
             
-            context2.putImageData(imageData, -(h.size/2), -(h.size/2));  
+            context2.putImageData(imageData, left-(h.size/2), top-(h.size/2));
+            
+            onComplete();
+            
         };
     }
     
