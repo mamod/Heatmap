@@ -159,39 +159,36 @@
         
         this.Point = function(x,y,num) {
             
-            var canvas = h.layers[0];
-            var context = canvas.getContext("2d");
-            var canvas2 = h.layers[1];
-            var context2 = canvas2.getContext("2d");
+            var canvas = h.layers[0],
+            canvas2 = h.layers[1],
+            context = canvas.getContext("2d"),
+            context2 = canvas2.getContext("2d");
             
             var oldmax = h.maxValue;
             var count = me.setMax(x,y,num);
             
             var decrease = count > oldmax == 1 ? true : false;
-            console.log(count);
+            
             if (decrease){    
-                me.setImageData(canvas,context,context2,{
-                    redraw : true,
-                    oldMax : oldmax,
-                    onComplete : function(){
-                        //context.width = context.width;
-                        //context.globalAlpha = 1;
+                me.setImageData({
+                    "redraw" : true,
+                    "oldMax" : oldmax,
+                    "onComplete" : function(){
+                        context.globalAlpha = 1;
                         context.drawImage(h.transIMG, x, y, h.size, h.size);
-                        me.setImageData(canvas,context,context2,{
-                            left : x,
-                            top : y,
-                            width : h.size,
-                            height : h.size
+                        me.setImageData({
+                            "left" : x,
+                            "top" : y,
+                            "width" : h.size,
+                            "height" : h.size
                         });
                     }
                 });
                 
-                console.log(h.maxValue);
-                
             } else {
                 context.globalAlpha = count/h.maxValue;
                 context.drawImage(h.transIMG, x, y, h.size, h.size);
-                me.setImageData(canvas,context,context2,{
+                me.setImageData({
                     left : x,
                     top : y,
                     width : h.size,
@@ -208,7 +205,7 @@
             
             var num = count ? count : 1;
             
-            h.map[x][y] = h.map[x][y] ? h.map[x][y]+num : num;
+            h.map[x][y] = h.map[x][y] ? h.map[x][y] + num : num;
             
             if (h.map[x][y] > h.maxValue) {
                 h.maxValue = h.map[x][y];
@@ -219,36 +216,38 @@
         
         this.drawHeatMap = function(){
             
-            var canvas = h.layers[0];
-            var context = canvas.getContext("2d");
-            var canvas2 = h.layers[1];
-            var context2 = canvas2.getContext("2d");
+            var canvas = h.layers[0],
+            canvas2 = h.layers[1],
+            context = canvas.getContext("2d"),
+            context2 = canvas2.getContext("2d");
             
             //reset transparent canvas
             canvas.width = canvas.width;
-            
             var map = h.map;
             for( var x in map ){
-                for( var y in map[x] ){    
+                for( var y in map[x] ){
                     context.globalAlpha = map[x][y]/h.maxValue;
-                    context.drawImage(h.transIMG, x, y, h.size, h.size);
+                    context.drawImage(h.transIMG, parseFloat(x), parseFloat(y), h.size, h.size);
                 }
             }
             
-            
-            me.setImageData(canvas,context,context2);
+            me.setImageData();
         };
         
-        this.setImageData = function(canvas,context,context2,obj) {
+        this.setImageData = function(obj) {
             
-            context.globalAlpha = 1;
             var colors = h.colorWheel;
             //give some time for colorsWheel to be fully loaded
-            if ( colors.length < 255 ){
+            if ( colors.length < 1 ){
                 setTimeout(function(){
-                    me.setImageData(canvas,context,context2,obj);
-                },20); return;
+                    me.setImageData(obj);
+                },25); return;
             }
+            
+            var canvas = h.layers[0],
+            canvas2 = h.layers[1],
+            context = canvas.getContext("2d"),
+            context2 = canvas2.getContext("2d");
             
             var width = canvas.width,
             height = canvas.height,
@@ -293,7 +292,7 @@
             }
             
             if (obj && obj.redraw){
-                context.putImageData(imageData, 0,0,left,top);
+                context.putImageData(imageData, 0 ,0 );
             }
             
             context2.putImageData(imageData, left-(h.size/2), top-(h.size/2));
