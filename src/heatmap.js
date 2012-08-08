@@ -11,6 +11,9 @@
         h.layers = [];
         h.maxValue = 1;
         h.colorWheel = [];
+        h.queue = options.queue || false;
+        h.clone = {};
+        h.list = [];
         
         var SRCmap = {
             classic : 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAAYCAIAAACa4rRzAAABzUlEQVR4Xu1TW27jQAzjvJykRdv0Lt3Pvf+Z2mRGS824qVHsDUSDIBh5HFuUmP58/B2GYclGGjswRu6dnHpfsFnxA5PzPMkDMMtmxYE6uVmqSA25GrkQm3MlNuc2sS1UnKoL8nnyVnAuaBUto1E3XBrOFZdt8jxPcSqOLTtaQgPqRAZgQJ8YwP2AG0B8wW4YXxOf6FP0Kbx+x1j8EDfYoej6vp+0Pm/NV7jmGynoyP72hJ4xShrFuVNUh9XcyS37z1YoXJM3Z69sru23WPWdaY+d1jEaQOF/SDMoaIPRj+ZstGQxi8uhMkWGUWRatdyiVfPzd+eWVfy5xLdzy78ffH7rJY68jrHCRx7HHo8f//k4Iur1Jfyq/14pefnBObsml+KoXBsuFVfljMsFT094fsbrK15ecL3ueH/HAitvb7zlK6NLDoR1QAEIO3o17g4oANqD0A4oAKHHr+YVAO1AaAcUgNDjV/MKgHYgtAMKQOjxq3kFQDsQ2gEFIPT41bwCoB0I7YACEHr8al4B0A6EdkABCD1+Na8AaAdCO6AAhB6/mlcAtAOhHVAAQo9fzSsA2oHQDigAocev5hUA7UBoBxSA0ONX8wqAdiC0A/8AiXjlCY2R9IUAAAAASUVORK5CYII=',
@@ -134,8 +137,11 @@
     var heatmapAdd = function(h) {
         
         var me = this;
+        me.finished = true;
         
-        this.Data = function(obj){
+        this.Data = function(obj,oldMax){
+            
+            me.finished = false;
             
             var dots;
             if (Object.prototype.toString.call( obj ) === '[object Array]' ){
@@ -144,17 +150,39 @@
                 dots = obj.data;
             }
             
-            //we get max points
+            //we have max point already set!!! in fact we don't trust this
+            // and we actually going to check for max point ourselfs :)
             if (obj.max && obj.max > h.maxValue){
                 h.maxValue = obj.max;    
             }
             
+            //this creates data object and on the same time checks for max value
             for (var x = 0; x < dots.length; x++){
                 var dot = dots[x];
                 me.setMax(dot.x,dot.y,dot.count);
             }
             
-            me.drawHeatMap();
+            if (oldMax && h.maxValue > oldMax){
+                me.setImageData({
+                    "redraw" : true,
+                    "oldMax" : oldMax,
+                    "onComplete" : function(){
+                        me.drawHeatMap();
+                    }
+                });
+            } else {
+                me.drawHeatMap();
+            }
+        };
+        
+        this.toQueue = function(obj){
+            var inter = setInterval(function(){
+                if (me.finished){
+                    clearInterval(inter);
+                    h.clone = {};
+                    h.add.Data(obj,h.maxValue);
+                }
+            },250);
         };
         
         this.Point = function(x,y,num) {
@@ -201,11 +229,15 @@
             
             if (!h.map[x]){
                 h.map[x] = {};
+                h.clone[x] = {};
+            } else if (!h.clone[x]){
+                h.clone[x] = {};
             }
             
             var num = count ? count : 1;
             
             h.map[x][y] = h.map[x][y] ? h.map[x][y] + num : num;
+            h.clone[x][y] = h.map[x][y];
             
             if (h.map[x][y] > h.maxValue) {
                 h.maxValue = h.map[x][y];
@@ -214,24 +246,51 @@
             return h.map[x][y];
         };
         
-        this.drawHeatMap = function(){
+        this.drawHeatMap = function(ol){
             
+            var map = h.queue ? h.clone : h.map;
             var canvas = h.layers[0],
             canvas2 = h.layers[1],
             context = canvas.getContext("2d"),
             context2 = canvas2.getContext("2d");
             
-            //reset transparent canvas
-            canvas.width = canvas.width;
-            var map = h.map;
+            canvas2.width = canvas2.width;
+            
+            var i = 0;
+            var exit = false;
             for( var x in map ){
+                
+                if (h.queue && exit){
+                    me.setImageData();
+                    setTimeout(function(){
+                        me.drawHeatMap();
+                    }, h.queue.time);
+                    
+                    return false;
+                }
+                
                 for( var y in map[x] ){
+                    
+                    if (h.queue && i > h.queue.items){
+                        exit = true;
+                        break;
+                    }
+                    
                     context.globalAlpha = map[x][y]/h.maxValue;
                     context.drawImage(h.transIMG, parseFloat(x), parseFloat(y), h.size, h.size);
+                    i++;
+                    delete map[x][y];
+                    
                 }
             }
             
-            me.setImageData();
+            
+            
+            return me.setImageData({
+                onComplete : function(){
+                    me.finished = true;
+                }
+            });
         };
         
         this.setImageData = function(obj) {
