@@ -1,3 +1,11 @@
+/*
+* heatmap.js
+* MIT Licensed
+* @author Mamod Mehyar
+* http://twitter.com/mamod
+* http://mamod.me
+*/
+
 (function(){
     
     var heatmap = function(options){
@@ -94,14 +102,16 @@
             
             var element = h.element instanceof Object ? h.element : document.getElementById(h.element);
             
-            //create canvas layers
-            for (var i = 0; i<3;i++){
+            //create 2 canvas layers
+            //one for setting and calculating gradiant
+            //and one for drawing the actual heatmap
+            for (var i = 0; i<2;i++){
                 
                 var canvas = document.createElement("canvas");
                 canvas.style.position = "absolute";
                 canvas.style.top = "0";
                 canvas.style.left = "0";
-                canvas.style.zIndex = 9999990+i;
+                canvas.style.zIndex = 9999990-i;
                 
                 canvas.width = element.style.width.replace(/px/, "") || h.getWidth(element);
                 canvas.height =  element.style.height.replace(/px/, "") || h.getHeight(element);
@@ -271,7 +281,7 @@
                     me.setImageData();
                     setTimeout(function(){
                         me.drawHeatMap();
-                    }, h.queue.time);
+                    }, h.queue.delay);
                     
                     return false;
                 }
