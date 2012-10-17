@@ -78,15 +78,21 @@ OPTIONS
  - gold
  - URL for a custom gradient png file
 
+
+
 - **shadow (string)** : shadow area of the heatmap point, this defines the attach points with close points
  - large
  - medium
  - small
 
+
+
 - **queue (object)** : define queue options
  - items : how many point to inject at once
  - delay : how many milliseconds to wait for the next injection
- 
+
+
+
 - **onComplete (function)** : a function to be called once the heatmap finish draing all points
 
 DATA
