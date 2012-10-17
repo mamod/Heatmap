@@ -49,22 +49,29 @@ USAGE
 OPTIONS
 =======
 
-- element
+- element : ID of the element you want to draw the heatmap within
 
-ID of the element you want to draw the heatmap within
-
-#### Example
+##### Example
 
 
-    <!-- html document -->
+    <!-- heatmap area -->
     <div id="heat"></div>
     
     
-    //javascript
-    var h = new heatmap({
-    element : 'heat',
-    ....
-    });
+    <script>
+        var h = new heatmap({
+        element : 'heat',
+        ....
+        });
+    </script>
+
+
+- size : size of heatmap circle default to 50
+
+- gradient : color scale for the heatmap
+There are five preset gradient options, classic, classic2, fire, fire2 and gold
+You can also set your own color gradient by specifying a full URL for the color
+gradient png image
 
 
     
