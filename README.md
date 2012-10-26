@@ -17,7 +17,6 @@ and some twists like
 USAGE
 =====
     
-    
     var obj = [
         {x:66,y:50},
         {x:75,y:65},
@@ -46,6 +45,7 @@ USAGE
         
     };
     
+
 
 
 OPTIONS
